@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package test;
+
+message Message
+{
+    int32 id = 1;
+    string text = 2;
+    repeated int32 data = 3;
+    repeated string messages = 4;
+}
