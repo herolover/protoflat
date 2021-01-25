@@ -121,6 +121,26 @@ void generate_field(const google::protobuf::FieldDescriptor *field_type, Printer
     printer.Println(" " + field_type->name() + ";");
 }
 
+void generate_oneof(const google::protobuf::OneofDescriptor *oneof_type, Printer &printer)
+{
+    printer.Println("std::optional<std::variant<");
+    printer.Indent();
+    for (int i = 0; i < oneof_type->field_count(); ++i)
+    {
+        printer.Print(protoflat_field_type(oneof_type->field(i)));
+        if (i + 1 < oneof_type->field_count())
+        {
+            printer.Println(",");
+        }
+        else
+        {
+            printer.Println();
+        }
+    }
+    printer.Outdent();
+    printer.Println(">> " + oneof_type->name() + ";");
+}
+
 void generate_message(const google::protobuf::Descriptor *message_type, Printer &printer)
 {
     printer.Println("struct " + message_type->name());
@@ -139,7 +159,15 @@ void generate_message(const google::protobuf::Descriptor *message_type, Printer 
 
     for (int i = 0; i < message_type->field_count(); ++i)
     {
-        generate_field(message_type->field(i), printer);
+        if (message_type->field(i)->containing_oneof() == nullptr)
+        {
+            generate_field(message_type->field(i), printer);
+        }
+    }
+
+    for (int i = 0; i < message_type->oneof_decl_count(); ++i)
+    {
+        generate_oneof(message_type->oneof_decl(i), printer);
     }
 
     printer.Outdent();
@@ -161,7 +189,9 @@ void generate_header(const google::protobuf::FileDescriptor *file, Printer &prin
         printer.Println();
     }
 
+    printer.Println("#include <optional>");
     printer.Println("#include <string>");
+    printer.Println("#include <variant>");
     printer.Println("#include <vector>");
     printer.Println();
 
