@@ -1,4 +1,5 @@
-#include "test.pb.h"
+//#include "test.pb.h"
+#include "test.protoflat.h"
 
 #include <protoflat.h>
 
@@ -145,15 +146,15 @@ int main()
     }
 
     test::Message message2;
-    message2.set_id(0);
-    message2.set_text("Hello!");
+//    message2.set_id(0);
+//    message2.set_text("Hello!");
 //    message2.add_data(3);
 //    message2.add_data(270);
 //    message2.add_data(86942);
-    message2.add_messages("Hello!");
-    message2.add_messages("World!");
+//    message2.add_messages("Hello!");
+//    message2.add_messages("World!");
 
-    print(message2.SerializeAsString());
+//    print(message2.SerializeAsString());
 
     return 0;
 }
