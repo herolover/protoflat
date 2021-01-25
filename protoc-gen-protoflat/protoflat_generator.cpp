@@ -182,7 +182,7 @@ void generate_header(const google::protobuf::FileDescriptor *file, Printer &prin
 
     for (int i = 0; i < file->dependency_count(); ++i)
     {
-        printer.Println("#include \"" + protoflat_file_name(file) + "\"");
+        printer.Println("#include \"" + protoflat_file_name(file->dependency(i)) + ".h\"");
     }
     if (file->dependency_count() > 0)
     {
