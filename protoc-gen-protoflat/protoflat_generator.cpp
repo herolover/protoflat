@@ -101,6 +101,11 @@ std::string protoflat_field_type(const google::protobuf::FieldDescriptor *field_
     }
 }
 
+std::string protoflat_file_name(const google::protobuf::FileDescriptor *file)
+{
+    return substitute(file->name(), ".proto", ".protoflat");
+}
+
 void generate_field(const google::protobuf::FieldDescriptor *field_type, Printer &printer)
 {
     if (field_type->is_repeated())
@@ -142,10 +147,19 @@ void generate_message(const google::protobuf::Descriptor *message_type, Printer 
     printer.Println();
 }
 
-void generate_header(const std::string &/*name*/, const google::protobuf::FileDescriptor *file, Printer &printer)
+void generate_header(const google::protobuf::FileDescriptor *file, Printer &printer)
 {
     printer.Println("#pragma once");
     printer.Println();
+
+    for (int i = 0; i < file->dependency_count(); ++i)
+    {
+        printer.Println("#include \"" + protoflat_file_name(file) + "\"");
+    }
+    if (file->dependency_count() > 0)
+    {
+        printer.Println();
+    }
 
     printer.Println("#include <string>");
     printer.Println("#include <vector>");
@@ -168,27 +182,27 @@ void generate_header(const std::string &/*name*/, const google::protobuf::FileDe
     printer.Println("}");
 }
 
-void generate_source(const std::string &name, const google::protobuf::FileDescriptor *file, Printer &printer)
+void generate_source(const google::protobuf::FileDescriptor *file, Printer &printer)
 {
-    printer.Println("#include \"" + name + ".h\"");
+    printer.Println("#include \"" + protoflat_file_name(file) + ".h\"");
     printer.Println();
     printer.Println("namespace " + substitute(file->package(), ".", "::"));
     printer.Println("{");
     printer.Println("}");
 }
 
-bool ProtoflatGenerator::Generate(const google::protobuf::FileDescriptor *file, const std::string &/*parameter*/,
-                                  google::protobuf::compiler::GeneratorContext *generator_context, std::string */*error*/) const
+bool ProtoflatGenerator::Generate(const google::protobuf::FileDescriptor *file, const std::string &parameter,
+                                  google::protobuf::compiler::GeneratorContext *generator_context, std::string *error) const
 {
-    auto name = substitute(file->name(), ".proto", ".protoflat");
+    auto name = protoflat_file_name(file);
 
     auto header_stream = generator_context->Open(name + ".h");
     Printer header_printer(header_stream);
-    generate_header(name, file, header_printer);
+    generate_header(file, header_printer);
 
     auto source_stream = generator_context->Open(name + ".cpp");
     Printer source_printer(source_stream);
-    generate_source(name, file, source_printer);
+    generate_source(file, source_printer);
 
     return true;
 }
