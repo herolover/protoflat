@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(protoflat LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_library(${PROJECT_NAME} INTERFACE)
@@ -62,6 +62,7 @@ if(${${PROJECT_NAME}_BUILD_BENCHMARK})
     add_executable(${PROJECT_NAME}-benchmark
         ${CMAKE_CURRENT_SOURCE_DIR}/benchmark/main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/benchmark/protoflat.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/benchmark/proto3.cpp
         ${PROTO_SOURCES})
     target_link_libraries(${PROJECT_NAME}-benchmark ${PROJECT_NAME} benchmark::benchmark libprotobuf)
 endif()

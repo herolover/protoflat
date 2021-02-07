@@ -26,18 +26,27 @@ struct type_traits<Message>
     inline static constexpr field_header data_header{3, wire_type::length_delimited};
     inline static constexpr field_header messages_header{4, wire_type::length_delimited};
 
-//    static size_t size(const Message &value)
-//    {
-//        size_t size = 0;
+    static size_t size(const Message &value)
+    {
+        size_t size = 0;
 
-//        size += type_traits<varint>::size(field_header::encode(id_header));
-//        size += type_traits<varint>::size(value.id);
+        size += type_traits<varint>::size(field_header::encode(id_header));
+        size += type_traits<varint>::size(value.id);
 
-//        size += type_traits<varint>::size(field_header::encode(text_header));
-//        size += type_traits<std::string>::size(value.text);
+        size += type_traits<varint>::size(field_header::encode(text_header));
+        size += type_traits<std::string>::size(value.text);
 
-//        return size;
-//    }
+        size += type_traits<varint>::size(field_header::encode(data_header));
+        size += type_traits<std::vector<varint>>::size(value.data);
+
+        for (auto &message : value.messages)
+        {
+            size += type_traits<varint>::size(field_header::encode(messages_header));
+            size += type_traits<std::string>::size(message);
+        }
+
+        return size;
+    }
 
     static void serialize(const Message &value, std::string &data)
     {
@@ -119,9 +128,22 @@ struct type_traits<Message>
 
 }
 
-static void BM_ProtoflatSerialize(benchmark::State &state)
+static void BM_ProtoflatSerializeToStringWithoutAlloc(benchmark::State &state)
 {
-    Message message{0, "Hello!", {}, {"Hello!", "World!"}};
+    Message message{1000, "Hello!", {1'000'000, -5000, -1}, {"Hello!", "World!"}};
+
+    std::string data;
+    data.reserve(1000);
+    for (auto _ : state)
+    {
+        protoflat::serialize_to_string(message, data);
+        data.clear();
+    }
+}
+
+static void BM_ProtoflatSerializeAsString(benchmark::State &state)
+{
+    Message message{1000, "Hello!", {1'000'000, -5000, -1}, {"Hello!", "World!"}};
 
     for (auto _ : state)
     {
@@ -129,4 +151,5 @@ static void BM_ProtoflatSerialize(benchmark::State &state)
     }
 }
 
-BENCHMARK(BM_ProtoflatSerialize);
+BENCHMARK(BM_ProtoflatSerializeToStringWithoutAlloc);
+BENCHMARK(BM_ProtoflatSerializeAsString);

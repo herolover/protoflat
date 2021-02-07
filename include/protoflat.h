@@ -2,6 +2,7 @@
 
 #include <string>
 #include <string_view>
+#include <span>
 #include <type_traits>
 #include <vector>
 
@@ -61,7 +62,7 @@ template<class T>
 struct type_traits
 {
     static size_t size(T value);
-    static void serialize(T value, std::string &data);
+    static void serialize(T value, std::span<std::byte> &data);
     static bool deserialize(std::string_view &data, T &value);
 };
 
@@ -293,10 +294,21 @@ struct type_traits<std::vector<fixed>>
 };
 
 template<class T, typename = std::enable_if_t<std::is_class_v<T>>>
+inline void serialize_to_string(const T &value, std::string &data)
+{
+    auto size = type_traits<T>::size(value);
+    if (data.capacity() < size)
+    {
+        data.reserve(size);
+    }
+    type_traits<T>::serialize(value, data);
+}
+
+template<class T, typename = std::enable_if_t<std::is_class_v<T>>>
 inline std::string serialize(const T &value)
 {
     std::string data;
-    type_traits<T>::serialize(value, data);
+    serialize_to_string(value, data);
     return data;
 }
 

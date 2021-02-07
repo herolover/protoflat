@@ -35,7 +35,7 @@ message Message
         Data data_body = 10;
         string string_body = 11;
         double double_body = 12;
-        test2.Message.Data data2_body = 13;
-        test2.Message message2_body = 14;
+        //test2.Message.Data data2_body = 13;
+        //test2.Message message2_body = 14;
     }
 }
