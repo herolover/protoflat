@@ -38,14 +38,8 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
         set(PROTOFLAT_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/tests/${PROTO_NAME}.protoflat.h")
         set(PROTOFLAT_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/tests/${PROTO_NAME}.protoflat.cpp")
         add_custom_command(
-            OUTPUT ${PROTO_HEADER} ${PROTO_SOURCE}
-            COMMAND $<TARGET_FILE:protoc> --cpp_out=. ${PROTO_FILE}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests/
-            DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/${PROTO_FILE} VERBATIM
-        )
-        add_custom_command(
-            OUTPUT ${PROTOFLAT_HEADER} ${PROTOFLAT_SOURCE}
-            COMMAND $<TARGET_FILE:protoc> --plugin=protoc-gen-protoflat=$<TARGET_FILE:protoc-gen-protoflat> --protoflat_out=. ${PROTO_FILE}
+            OUTPUT ${PROTO_HEADER} ${PROTO_SOURCE} ${PROTOFLAT_HEADER} ${PROTOFLAT_SOURCE}
+            COMMAND $<TARGET_FILE:protoc> --cpp_out=. --plugin=protoc-gen-protoflat=$<TARGET_FILE:protoc-gen-protoflat> --protoflat_out=. ${PROTO_FILE}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests/
             DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/${PROTO_FILE} VERBATIM
         )
