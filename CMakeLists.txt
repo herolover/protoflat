@@ -10,6 +10,7 @@ target_sources(${PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/pro
 target_include_directories(${PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 option(${PROJECT_NAME}_BUILD_TESTS "Build tests" ON)
+option(${PROJECT_NAME}_BUILD_BENCHMARK "Build benchmark" ON)
 
 set(protobuf_BUILD_LIBPROTOC ON CACHE BOOL "")
 set(protobuf_BUILD_PROTOC_BINARIES ON CACHE BOOL "")
@@ -24,12 +25,7 @@ add_executable(protoc-gen-protoflat
     ${CMAKE_CURRENT_SOURCE_DIR}/protoc-gen-protoflat/protoflat_generator.cpp)
 target_link_libraries(protoc-gen-protoflat libprotobuf libprotoc)
 
-if(${${PROJECT_NAME}_BUILD_TESTS})
-    set(CATCH_BUILD_TESTING OFF CACHE BOOL "")
-    set(CATCH_INSTALL_DOCS OFF CACHE BOOL "")
-    set(CATCH_INSTALL_HELPERS OFF CACHE BOOL "")
-    add_subdirectory(submodules/catch2)
-
+if(${${PROJECT_NAME}_BUILD_TESTS} OR ${${PROJECT_NAME}_BUILD_BENCHMARK})
     file(GLOB PROTO_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.proto")
     foreach(PROTO_FILE ${PROTO_FILES})
         string(REGEX REPLACE "(.*)\.proto" "\\1" PROTO_NAME ${PROTO_FILE})
@@ -45,9 +41,27 @@ if(${${PROJECT_NAME}_BUILD_TESTS})
         )
         list(APPEND PROTO_SOURCES ${PROTO_HEADER} ${PROTO_SOURCE} ${PROTOFLAT_HEADER} ${PROTOFLAT_SOURCE})
     endforeach()
+endif()
+
+if(${${PROJECT_NAME}_BUILD_TESTS})
+    set(CATCH_BUILD_TESTING OFF CACHE BOOL "")
+    set(CATCH_INSTALL_DOCS OFF CACHE BOOL "")
+    set(CATCH_INSTALL_HELPERS OFF CACHE BOOL "")
+    add_subdirectory(submodules/catch2)
 
     add_executable(${PROJECT_NAME}-tests
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/tests.cpp
         ${PROTO_SOURCES})
     target_link_libraries(${PROJECT_NAME}-tests ${PROJECT_NAME} libprotobuf Catch2)
+endif()
+
+if(${${PROJECT_NAME}_BUILD_BENCHMARK})
+    set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "")
+    add_subdirectory(submodules/benchmark)
+
+    add_executable(${PROJECT_NAME}-benchmark
+        ${CMAKE_CURRENT_SOURCE_DIR}/benchmark/main.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/benchmark/protoflat.cpp
+        ${PROTO_SOURCES})
+    target_link_libraries(${PROJECT_NAME}-benchmark ${PROJECT_NAME} benchmark::benchmark libprotobuf)
 endif()
