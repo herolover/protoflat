@@ -2,7 +2,6 @@
 
 #include <string>
 #include <string_view>
-#include <span>
 #include <type_traits>
 #include <vector>
 
@@ -22,7 +21,7 @@ inline constexpr int64_t decode(uint64_t value)
     return (value >> 1) ^ -(value & 1);
 }
 
-}
+} // namespace zigzag
 
 enum class wire_type : uint8_t
 {
@@ -366,4 +365,4 @@ inline bool deserialize(std::string_view &data, T &value)
     return type_traits<T>::deserialize(data, value);
 }
 
-}
+} // namespace protoflat

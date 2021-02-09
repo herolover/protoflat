@@ -3,8 +3,8 @@
 
 #include <protoflat.h>
 
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 
 struct Message
 {
@@ -143,27 +143,27 @@ void print(const std::string &data)
 
 int main()
 {
-//    Message message{0, "Hello!", {}, {"Hello!", "World!"}};
-//    auto data = protoflat::serialize(message);
-//    print(data);
+    //    Message message{0, "Hello!", {}, {"Hello!", "World!"}};
+    //    auto data = protoflat::serialize(message);
+    //    print(data);
 
-//    Message message_deserialized;
-//    std::string_view data_view(data);
-//    if (!protoflat::deserialize(data_view, message_deserialized) || message != message_deserialized)
-//    {
-//        std::cout << "failed" << std::endl;
-//    }
+    //    Message message_deserialized;
+    //    std::string_view data_view(data);
+    //    if (!protoflat::deserialize(data_view, message_deserialized) || message != message_deserialized)
+    //    {
+    //        std::cout << "failed" << std::endl;
+    //    }
 
     test::Message message2;
-//    message2.set_id(0);
-//    message2.set_text("Hello!");
-//    message2.add_data(3);
-//    message2.add_data(270);
-//    message2.add_data(86942);
-//    message2.add_messages("Hello!");
-//    message2.add_messages("World!");
+    //    message2.set_id(0);
+    //    message2.set_text("Hello!");
+    //    message2.add_data(3);
+    //    message2.add_data(270);
+    //    message2.add_data(86942);
+    //    message2.add_messages("Hello!");
+    //    message2.add_messages("World!");
 
-//    print(message2.SerializeAsString());
+    //    print(message2.SerializeAsString());
 
     return 0;
 }
