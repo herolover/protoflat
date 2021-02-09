@@ -23,7 +23,7 @@ add_executable(protoc-gen-protoflat
     ${CMAKE_CURRENT_SOURCE_DIR}/protoc-gen-protoflat/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/protoc-gen-protoflat/protoflat_generator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/protoc-gen-protoflat/protoflat_generator.cpp)
-target_link_libraries(protoc-gen-protoflat libprotobuf libprotoc)
+target_link_libraries(protoc-gen-protoflat libprotobuf libprotoc protoflat)
 
 if(${${PROJECT_NAME}_BUILD_TESTS} OR ${${PROJECT_NAME}_BUILD_BENCHMARK})
     file(GLOB PROTO_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.proto")
@@ -37,7 +37,7 @@ if(${${PROJECT_NAME}_BUILD_TESTS} OR ${${PROJECT_NAME}_BUILD_BENCHMARK})
             OUTPUT ${PROTO_HEADER} ${PROTO_SOURCE} ${PROTOFLAT_HEADER} ${PROTOFLAT_SOURCE}
             COMMAND $<TARGET_FILE:protoc> --cpp_out=. --plugin=protoc-gen-protoflat=$<TARGET_FILE:protoc-gen-protoflat> --protoflat_out=. ${PROTO_FILE}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests/
-            DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/${PROTO_FILE} VERBATIM
+            DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/${PROTO_FILE} protoc-gen-protoflat VERBATIM
         )
         list(APPEND PROTO_SOURCES ${PROTO_HEADER} ${PROTO_SOURCE} ${PROTOFLAT_HEADER} ${PROTOFLAT_SOURCE})
     endforeach()

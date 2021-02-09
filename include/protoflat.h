@@ -34,6 +34,25 @@ enum class wire_type : uint8_t
     fixed32
 };
 
+inline std::string_view wire_type_string(wire_type type)
+{
+    switch (type)
+    {
+    case wire_type::varint:
+        return "varint";
+    case wire_type::fixed64:
+        return "fixed64";
+    case wire_type::length_delimited:
+        return "length_delimited";
+    case wire_type::start_group:
+        return "start_group";
+    case wire_type::end_group:
+        return "end_group";
+    case wire_type::fixed32:
+        return "fixed32";
+    }
+}
+
 struct field_header
 {
     uint64_t field_number;
@@ -58,11 +77,39 @@ struct fixed
 {
 };
 
+struct length_delimited
+{
+};
+
+struct packed_varint
+{
+};
+
+struct packed_fixed
+{
+};
+
+inline std::string_view protoflat_specialization_type(wire_type type, bool is_packed)
+{
+    switch (type)
+    {
+    case wire_type::varint:
+        return is_packed ? "packed_varint" : "varint";
+    case wire_type::length_delimited:
+        return "length_delimited";
+    case wire_type::fixed32:
+    case wire_type::fixed64:
+        return is_packed ? "packed_fixed" : "fixed";
+    default:
+        return "unknown";
+    }
+}
+
 template<class T>
 struct type_traits
 {
     static size_t size(T value);
-    static void serialize(T value, std::span<std::byte> &data);
+    static void serialize(T value, std::string &data);
     static bool deserialize(std::string_view &data, T &value);
 };
 
@@ -158,7 +205,7 @@ struct type_traits<fixed>
 };
 
 template<>
-struct type_traits<std::string>
+struct type_traits<length_delimited>
 {
     static size_t size(const std::string &value)
     {
@@ -190,7 +237,7 @@ struct type_traits<std::string>
 };
 
 template<>
-struct type_traits<std::vector<varint>>
+struct type_traits<packed_varint>
 {
     template<class T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
     static size_t size(const std::vector<T> &values)
@@ -245,7 +292,7 @@ struct type_traits<std::vector<varint>>
 };
 
 template<>
-struct type_traits<std::vector<fixed>>
+struct type_traits<packed_fixed>
 {
     template<class T, typename = std::enable_if_t<std::is_arithmetic_v<T> && sizeof(T) >= 4>>
     static void size(const std::vector<T> &values)

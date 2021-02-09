@@ -30,12 +30,12 @@ message Message
 
     repeated Data aaaaa = 5;
 
-    oneof body
-    {
-        Data data_body = 10;
-        string string_body = 11;
-        double double_body = 12;
+    // oneof body
+    // {
+        // Data data_body = 10;
+        // string string_body = 11;
+        // double double_body = 12;
         //test2.Message.Data data2_body = 13;
         //test2.Message message2_body = 14;
-    }
+    // }
 }
