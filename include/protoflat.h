@@ -115,8 +115,10 @@ struct type_traits
 template<>
 struct type_traits<varint>
 {
-    static size_t size(uint64_t value)
+    template<class T, typename = std::enable_if_t<std::is_integral_v<T> || std::is_enum_v<T>>>
+    static size_t size(T source_value)
     {
+        uint64_t &value = reinterpret_cast<uint64_t &>(source_value);
         size_t size = 0;
         do
         {
@@ -127,8 +129,10 @@ struct type_traits<varint>
         return size;
     }
 
-    static void serialize(uint64_t value, std::string &data)
+    template<class T, typename = std::enable_if_t<std::is_integral_v<T> || std::is_enum_v<T>>>
+    static void serialize(T source_value, std::string &data)
     {
+        uint64_t &value = reinterpret_cast<uint64_t &>(source_value);
         do
         {
             char byte = value & 0x7f;
@@ -175,8 +179,9 @@ struct type_traits<fixed>
     }
 
     template<class T, typename = std::enable_if_t<std::is_arithmetic_v<T> && sizeof(T) >= 4>>
-    static void serialize(T value, std::string &data)
+    static void serialize(T source_value, std::string &data)
     {
+        uint64_t &value = reinterpret_cast<uint64_t &>(source_value);
         for (int i = 0; i < sizeof(T); ++i)
         {
             data += static_cast<char>(value & 0xff);
@@ -238,11 +243,11 @@ struct type_traits<length_delimited>
 template<>
 struct type_traits<packed_varint>
 {
-    template<class T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+    template<class T, typename = std::enable_if_t<std::is_integral_v<T> || std::is_enum_v<T>>>
     static size_t size(const std::vector<T> &values)
     {
         size_t size = 0;
-        for (auto &value : values)
+        for (const auto &value : values)
         {
             size += type_traits<varint>::size(value);
         }
@@ -250,17 +255,17 @@ struct type_traits<packed_varint>
         return size;
     }
 
-    template<class T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+    template<class T, typename = std::enable_if_t<std::is_integral_v<T> || std::is_enum_v<T>>>
     static void serialize(const std::vector<T> &values, std::string &data)
     {
         type_traits<varint>::serialize(type_traits::size(values), data);
-        for (auto &value : values)
+        for (const auto &value : values)
         {
             type_traits<varint>::serialize(value, data);
         }
     }
 
-    template<class T, typename = std::enable_if_t<std::is_arithmetic_v<T>>>
+    template<class T, typename = std::enable_if_t<std::is_integral_v<T> || std::is_enum_v<T>>>
     static bool deserialize(std::string_view &data, std::vector<T> &values)
     {
         uint64_t size;
@@ -294,7 +299,7 @@ template<>
 struct type_traits<packed_fixed>
 {
     template<class T, typename = std::enable_if_t<std::is_arithmetic_v<T> && sizeof(T) >= 4>>
-    static void size(const std::vector<T> &values)
+    static size_t size(const std::vector<T> &values)
     {
         return values.size() * sizeof(T);
     }

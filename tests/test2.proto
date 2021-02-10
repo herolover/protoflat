@@ -2,10 +2,56 @@ syntax = "proto3";
 
 package test2;
 
-message Message
+enum GlobalEnum
 {
-    int32 id = 1;
-    string text = 2;
-    repeated int32 data = 3;
-    repeated string messages = 4;
+    UNKNOWN = 0;
+    AAA = 10;
+    BBB = 11;
+    CCC = 20;
+}
+
+message Data
+{
+    message Numeric32
+    {
+        int32 a = 1;
+        uint32 b = 2;
+        sint32 c = 3;
+        fixed32 d = 4;
+        float e = 5;
+        repeated int32 a_list = 6;
+        repeated uint32 b_list = 7;
+        repeated sint32 c_list = 8;
+        repeated fixed32 d_list = 9;
+        repeated float e_list = 10;
+    }
+
+    message Numeric64
+    {
+        int64 a = 1;
+        uint64 b = 2;
+        sint64 c = 3;
+        fixed64 d = 4;
+        float e = 5;
+        repeated int64 a_list = 6;
+        repeated uint64 b_list = 7;
+        repeated sint64 c_list = 8;
+        repeated fixed64 d_list = 9;
+        repeated float e_list = 10;
+    }
+
+    Numeric32 numeric_32 = 1;
+    Numeric64 numeric_64 = 2;
+
+    bool is_enabled = 10;
+    repeated bool is_enabled_list = 11;
+
+    GlobalEnum global_enum = 20;
+    repeated GlobalEnum global_enum_list = 21;
+
+    string text = 30;
+    repeated string text_list = 31;
+
+    bytes buffer = 41;
+    repeated bytes buffer_list = 42;
 }

@@ -70,9 +70,9 @@ void generate_enum(const google::protobuf::EnumDescriptor *enum_type, Printer &p
     printer.Println();
 }
 
-std::string message_type(const google::protobuf::Descriptor *message_type)
+std::string encode_full_name(const std::string &full_name)
 {
-    return substitute(message_type->full_name(), ".", "::");
+    return substitute(full_name, ".", "::");
 }
 
 protoflat::wire_type protoflat_wire_type(const google::protobuf::FieldDescriptor *field_type, bool get_final_type)
@@ -128,7 +128,9 @@ std::string protoflat_field_type(const google::protobuf::FieldDescriptor *field_
     case FieldDescriptor::CPPTYPE_STRING:
         return "std::string";
     case FieldDescriptor::CPPTYPE_MESSAGE:
-        return message_type(field_type->message_type());
+        return encode_full_name(field_type->message_type()->full_name());
+    case FieldDescriptor::CPPTYPE_ENUM:
+        return encode_full_name(field_type->enum_type()->full_name());
     default:
         return "unknown";
     }
@@ -145,8 +147,14 @@ void generate_field(const google::protobuf::FieldDescriptor *field_type, Printer
     {
         printer.Print("std::vector<");
     }
+    else if (field_type->type() == google::protobuf::FieldDescriptor::TYPE_MESSAGE)
+    {
+        printer.Print("std::optional<");
+    }
+
     printer.Print(protoflat_field_type(field_type));
-    if (field_type->is_repeated())
+
+    if (field_type->is_repeated() || field_type->type() == google::protobuf::FieldDescriptor::TYPE_MESSAGE)
     {
         printer.Print(">");
     }
@@ -215,6 +223,21 @@ void generate_type_traits_field_header(const google::protobuf::FieldDescriptor *
 
 void generate_type_traits_field_size(const google::protobuf::FieldDescriptor *field_type, Printer &printer)
 {
+    if (field_type->is_packed() || field_type->is_repeated() || field_type->cpp_type() == google::protobuf::FieldDescriptor::CPPTYPE_STRING)
+    {
+        printer.Println("if (!value." + field_type->name() + ".empty())");
+    }
+    else if (field_type->type() == google::protobuf::FieldDescriptor::TYPE_ENUM)
+    {
+        printer.Println("if (value." + field_type->name() + " == " + encode_full_name(field_type->enum_type()->full_name()) + "(0))");
+    }
+    else
+    {
+        printer.Println("if (value." + field_type->name() + ")");
+    }
+    printer.Println("{");
+    printer.Indent();
+
     auto wire_type = protoflat_wire_type(field_type, false);
     auto field_name = "value." + field_type->name();
     if (wire_type == protoflat::wire_type::length_delimited && field_type->is_repeated())
@@ -225,11 +248,15 @@ void generate_type_traits_field_size(const google::protobuf::FieldDescriptor *fi
 
         field_name = "field";
     }
+    else if (field_type->type() == google::protobuf::FieldDescriptor::TYPE_MESSAGE)
+    {
+        field_name = "*" + field_name;
+    }
 
     std::string specialization_type(protoflat::protoflat_specialization_type(wire_type, field_type->is_packed()));
     if (field_type->type() == google::protobuf::FieldDescriptor::TYPE_MESSAGE)
     {
-        specialization_type = message_type(field_type->message_type());
+        specialization_type = encode_full_name(field_type->message_type()->full_name());
     }
     printer.Println("size += type_traits<varint>::size(field_header::encode(" + field_type->name() + "_header));");
     printer.Println("size += type_traits<" + specialization_type + ">::size(" + field_name + ");");
@@ -240,15 +267,20 @@ void generate_type_traits_field_size(const google::protobuf::FieldDescriptor *fi
         printer.Println("}");
     }
 
+    printer.Outdent();
+    printer.Println("}");
     printer.Println();
 }
 
 void generate_type_traits_field_serialize(const google::protobuf::FieldDescriptor *field_type, Printer &printer)
 {
-    auto wire_type = protoflat_wire_type(field_type, false);
-    if (field_type->is_packed() || field_type->is_repeated() || wire_type == protoflat::wire_type::length_delimited)
+    if (field_type->is_packed() || field_type->is_repeated() || field_type->cpp_type() == google::protobuf::FieldDescriptor::CPPTYPE_STRING)
     {
         printer.Println("if (!value." + field_type->name() + ".empty())");
+    }
+    else if (field_type->type() == google::protobuf::FieldDescriptor::TYPE_ENUM)
+    {
+        printer.Println("if (value." + field_type->name() + " == " + encode_full_name(field_type->enum_type()->full_name()) + "(0))");
     }
     else
     {
@@ -258,6 +290,7 @@ void generate_type_traits_field_serialize(const google::protobuf::FieldDescripto
     printer.Indent();
 
     auto field_name = "value." + field_type->name();
+    auto wire_type = protoflat_wire_type(field_type, false);
     if (wire_type == protoflat::wire_type::length_delimited && field_type->is_repeated())
     {
         printer.Println("for (auto &field : value." + field_type->name() + ")");
@@ -266,11 +299,15 @@ void generate_type_traits_field_serialize(const google::protobuf::FieldDescripto
 
         field_name = "field";
     }
+    else if (field_type->type() == google::protobuf::FieldDescriptor::TYPE_MESSAGE)
+    {
+        field_name = "*" + field_name;
+    }
 
     std::string specialization_type(protoflat::protoflat_specialization_type(wire_type, field_type->is_packed()));
     if (field_type->type() == google::protobuf::FieldDescriptor::TYPE_MESSAGE)
     {
-        specialization_type = message_type(field_type->message_type());
+        specialization_type = encode_full_name(field_type->message_type()->full_name());
     }
     printer.Println("type_traits<varint>::serialize(field_header::encode(" + field_type->name() + "_header), data);");
     printer.Println("type_traits<" + specialization_type + ">::serialize(" + field_name + ", data);");
@@ -287,7 +324,7 @@ void generate_type_traits_field_serialize(const google::protobuf::FieldDescripto
 
 void generate_message_type_traits_size(const google::protobuf::Descriptor *message_type, Printer &printer)
 {
-    printer.Println("static size_t size(const " + ::message_type(message_type) + " &value)");
+    printer.Println("static size_t size(const " + ::encode_full_name(message_type->full_name()) + " &value)");
     printer.Println("{");
     printer.Indent();
     printer.Println("size_t size = 0;");
@@ -305,7 +342,7 @@ void generate_message_type_traits_size(const google::protobuf::Descriptor *messa
 
 void generate_message_type_traits_serialize(const google::protobuf::Descriptor *message_type, Printer &printer)
 {
-    printer.Println("static void serialize(const " + ::message_type(message_type) + " &value, std::string &data)");
+    printer.Println("static void serialize(const " + encode_full_name(message_type->full_name()) + " &value, std::string &data)");
     printer.Println("{");
     printer.Indent();
 
@@ -320,8 +357,13 @@ void generate_message_type_traits_serialize(const google::protobuf::Descriptor *
 
 void generate_message_type_traits(const google::protobuf::Descriptor *message_type, Printer &printer)
 {
+    for (int i = 0; i < message_type->nested_type_count(); ++i)
+    {
+        generate_message_type_traits(message_type->nested_type(i), printer);
+    }
+
     printer.Println("template<>");
-    printer.Println("struct type_traits<" + ::message_type(message_type) + ">");
+    printer.Println("struct type_traits<" + encode_full_name(message_type->full_name()) + ">");
     printer.Println("{");
     printer.Indent();
 
